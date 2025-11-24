@@ -22,21 +22,21 @@ private:
 public:
     eVector() : data_(nullptr),size_(0),capacity_(0){}
 
-    eVector(size_t size,T init = T()) : data_(new T[size]),size_(size),capacity_(0){
+    eVector(size_t size,T init = T()) : data_(new T[size]),size_(size),capacity_(size_){
         std::cout << "eVector(size_t size,T init = T())" << std::endl;
         for(size_t i = 0;i < size;i++){
             data_[i] = init;
         }
     }
 
-    eVector(const eVector<T> &other) : data_(new T[other.size()]),size_(other.size()),capacity_(0){
+    eVector(const eVector<T> &other) : data_(new T[other.size()]),size_(other.size()),capacity_(other.capacity_){
         std::cout << "eVector(eVector<T> &other)" << std::endl;
         for(size_t i=0;i<other.size();i++){
             data_[i] = other[i];
         }
     }
 
-    eVector(const initializer_list<T> &init) : data_(new T[init.size()]),size_(0),capacity_(0){
+    eVector(const initializer_list<T> &init) : data_(new T[init.size()]),size_(0),capacity_(init.size()){
         std::cout << "eVector(initializer_list<T> init)" << std::endl;
         for(T elem : init){
             data_[size_++] = elem;
@@ -76,7 +76,7 @@ public:
     }
 
     //size标记的才是可以访问的元素，此外即使分配了内存也不属于可以安全访问的元素
-    T& at(size_t index) const{
+    T& at(size_t index){
         checkRange(index);
         return data_[index];
     }
@@ -105,10 +105,12 @@ public:
     }
 
     //resize:填充size_字段，将数据填入
+    //覆盖原有数据版本
     void resize(size_t newSize,T init = T()){
-        while(capacity_ <= newSize){
+        while(capacity_ < newSize){
             //进行扩容
-            reserve(capacity_ * 2);
+            size_t newCapacity = (capacity_ == 0) ? 1 : capacity_ * 2;
+            reserve(newCapacity);
         }
 
         //在有足够空间的前提下
@@ -137,6 +139,99 @@ public:
         
         //当size_为1时，0才是可访问下标
         return data_[--size_];
+    }
+
+    /* C.迭代器 */
+    class iterator{
+    private:
+        T *ptr_;
+        
+    public:
+        using iterator_category = std::random_access_iterator_tag;
+        using value_type = T;
+        using difference_type = std::ptrdiff_t;
+        using pointer = T*;
+        using reference = T&;
+
+        iterator() : ptr_(nullptr){}
+
+        iterator(T* ptr) : ptr_(ptr){}
+
+        //!=
+        bool operator!=(const iterator& other) const{
+            return ptr_ != other.ptr_;
+        }
+
+        bool operator==(const iterator& other) const{
+            return ptr_ == other.ptr_;
+        }
+
+        //仅仅适配eVector迭代器的比较运算符
+        //sort函数中，使用小于运算符来判断迭代器的前后关系
+        bool operator<(const iterator& other) const{
+            return ptr_ < other.ptr_;//并不代表值的大小比较，类似于下标比较
+        }
+
+        //引用确保 可以通过迭代器修改具体的值
+        T& operator*(){
+            return *ptr_;
+        }
+
+        T* operator->(){
+            return ptr_;
+        }
+
+        //前置的++ 返回的是自身,可以避免一次临时对象的生成
+        iterator& operator++(){
+            ptr_++;
+            return *this;
+        }
+
+        //后置++ 在括号中加上int
+        //返回的是 递增前的副本
+        iterator operator++(int){
+            iterator tmp = *this;
+            ptr_++;
+            return tmp;
+        }
+
+        iterator operator--(){
+            ptr_--;
+            return *this;
+        }
+
+        iterator operator--(int){
+            iterator tmp = *this;
+            ptr_--;
+            return tmp;
+        }
+
+        iterator operator-(size_t n){
+            return iterator(ptr_ - n);
+        }
+
+        iterator operator+(size_t n){
+            return iterator(ptr_ + n);
+        }
+        
+        //+= 实现自递增 避免返回拷贝
+        iterator operator+=(difference_type n){
+            ptr_ += n;
+            return *this;
+        }
+
+        size_t operator-(const iterator& other) const{
+            return ptr_ - other.ptr_;
+        }
+    };
+
+    //begin和end必须是值传递
+    iterator begin() const{
+        return iterator(data_);
+    }
+
+    iterator end() const{
+        return iterator(data_ + size_);
     }
 };
 
