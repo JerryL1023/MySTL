@@ -233,6 +233,30 @@ public:
     iterator end() const{
         return iterator(data_ + size_);
     }
+
+    /* D.插入和删除 */
+    iterator insert(iterator pos,cosnt T& value){
+        size_t index = pos - begin();
+
+        if(size_ == capacity_){
+            size_t newCapcity = (capacity_ == 0) ? 1 : capacity_ * 2;
+            reserve(newCapcity);
+        }
+
+        for(size_t i = size_;i > index;i--){
+            data[i]  = data[i-1];
+        }
+
+        data[index] = value;
+        size_++;
+
+        return iterator(begin() + index);
+    }
+
+    iterator erase(iterator pos){
+
+    }
+
 };
 
 
