@@ -235,7 +235,7 @@ public:
     }
 
     /* D.插入和删除 */
-    iterator insert(iterator pos,cosnt T& value){
+    iterator insert(iterator pos,const T& value){
         size_t index = pos - begin();
 
         if(size_ == capacity_){
@@ -254,7 +254,10 @@ public:
     }
 
     iterator erase(iterator pos){
+        if(pos == end())
+            return end();
 
+        size_t index = pos - begin();
     }
 
 };
