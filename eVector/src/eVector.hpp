@@ -226,38 +226,62 @@ public:
     };
 
     //begin和end必须是值传递
-    iterator begin() const{
-        return iterator(data_);
-    }
+        iterator begin() const{
+            return iterator(data_);
+        }
 
-    iterator end() const{
-        return iterator(data_ + size_);
-    }
+        iterator end() const{
+            return iterator(data_ + size_);
+        }
 
     /* D.插入和删除 */
-    iterator insert(iterator pos,const T& value){
-        size_t index = pos - begin();
+    //这里insert传入的value参数不能是引用 test_5
+    iterator insert(const iterator& pos,const T& value){
+        size_t index = pos - begin();//插入位置
 
+        //扩容
         if(size_ == capacity_){
             size_t newCapcity = (capacity_ == 0) ? 1 : capacity_ * 2;
             reserve(newCapcity);
         }
 
+        //从后往前 整体往后移动一个位置
+        //此时，第一个pos是新申请的位置
         for(size_t i = size_;i > index;i--){
-            data[i]  = data[i-1];
+            data_[i]  = data_[i-1];
         }
 
-        data[index] = value;
+        data_[index] = value;
         size_++;
-
+ 
         return iterator(begin() + index);
     }
 
-    iterator erase(iterator pos){
+    iterator erase(const iterator& pos){
         if(pos == end())
             return end();
 
         size_t index = pos - begin();
+        for(size_t i = index + 1;i < size_;i++){
+            data_[i-1] = data_[i];
+        }
+
+        size_--;
+
+        //迭代器会失效，所以一定要返回
+        return iterator(begin() + index);
+    }
+
+    iterator erase(const iterator& start_pos,const iterator& end_pos,const T value){
+        size_t index = end_pos - begin();
+        size_t delete_len = end_pos - start_pos;
+        for(size_t i = index;i < size_;i++){
+            data_[i] = data[i-delete_len];
+        }
+
+        size_ = size_ - delete_len;
+
+        return iterator(start_pos);
     }
 
 };
