@@ -5,6 +5,7 @@
 
 using namespace std;
 
+//缺乏allocator
 template<typename T>
 class eVector{
 private:
@@ -73,6 +74,19 @@ public:
     //notice: 由于指针的特殊性，data_为一个地址，地址不可变，但地址中存储的数据可变
     const T& operator[](size_t index) const{
         return data_[index];
+    }
+
+    //触发=运算符
+    void swap(eVector<T> &other) noexcept{
+        std::swap(data_,other.data_);
+        std::swap(size_,other.size_);
+        std::swap(capacity_,other.capacity_);
+    }
+
+    //加入& 避免多余的拷贝
+    eVector<T>& operator=(eVector<T> rhs) {
+        swap(rhs);
+        return *this;
     }
 
     //size标记的才是可以访问的元素，此外即使分配了内存也不属于可以安全访问的元素
@@ -272,14 +286,27 @@ public:
         return iterator(begin() + index);
     }
 
-    iterator erase(const iterator& start_pos,const iterator& end_pos,const T value){
+    //范围erase 删除[begin,end)
+    iterator erase(const iterator& start_pos,const iterator& end_pos){
+        //index 表示第一个 要进行移动的position
         size_t index = end_pos - begin();
-        size_t delete_len = end_pos - start_pos;
-        for(size_t i = index;i < size_;i++){
-            data_[i] = data[i-delete_len];
+        size_t diff = end_pos - start_pos;
+
+        if(end_pos < start_pos){
+            throw std::out_of_range("[eVector] erase : end_pos must larger than start_pos");
+        }
+        
+        if(end_pos == start_pos){
+            return iterator(start_pos);
         }
 
-        size_ = size_ - delete_len;
+        //size_t 类型的diff永远大于0
+        for(size_t i = index;i < size_;i++){
+            data_[i-diff] = data_[i];
+        }
+
+        size_ -= diff;
+        
 
         return iterator(start_pos);
     }
